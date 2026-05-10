@@ -29,6 +29,11 @@ on:
           - android13-5.15
           - android12-5.10
         default: OOS14+15+16
+      target_model:
+        description: 'Optional exact model filter, e.g. OP-ACE-2'
+        required: false
+        type: string
+        default: ''
       ksu_options:
         description: 'Enter KernelSU build json'
         required: true
@@ -172,6 +177,13 @@ jobs:
           
           filtered=$(jq -c "$jq_filter" matrix.json)
           count=$(jq 'length' <<<"$filtered")
+
+          target_model="${{ github.event.inputs.target_model }}"
+          if [ -n "$target_model" ]; then
+            filtered=$(echo "$filtered" | jq --arg model "$target_model" 'map(select(.model == $model))')
+            count=$(jq 'length' <<<"$filtered")
+            echo "ℹ️  Exact model filter applied: $target_model"
+          fi
           
           filtered=$(echo "$filtered" | jq '
             sort_by(
